@@ -9,7 +9,7 @@
 
   2、网格状工具列表，更完美的启动查看工具。
 
-  ![image-20250910113257137](C:\Users\MSI-NB\AppData\Roaming\Typora\typora-user-images\image-20250910113257137.png)
+  ![image-20250910113257137](https://github.com/WileHunter/MagicBag/blob/main/mdgitpic/Snipaste_2025-09-10_11-39-12.png)
 
   3、工具详情页面，快捷语句、目录、自定义语句，启动工具，调用本地终端，执行命令。
 
