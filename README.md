@@ -13,7 +13,7 @@
 
   3、工具详情页面，快捷语句、目录、自定义语句，启动工具，调用本地终端，执行命令。
 
-  ![image-20250910113604615](C:\Users\MSI-NB\AppData\Roaming\Typora\typora-user-images\image-20250910113604615.png)
+  ![image-20250910113604615](https://github.com/WileHunter/MagicBag/blob/main/mdgitpic/Snipaste_2025-09-10_11-39-35.png)
 
 - 笔记本
 
@@ -23,18 +23,18 @@
   3、快捷保存，ctrl+s快捷保存编辑笔记。
   4、时刻提醒未保存笔记。
 
-  ![image-20250910113338370](C:\Users\MSI-NB\AppData\Roaming\Typora\typora-user-images\image-20250910113338370.png)
+  ![image-20250910113338370](https://github.com/WileHunter/MagicBag/blob/main/mdgitpic/Snipaste_2025-09-10_11-39-41.png)
 
 - 数据库
 
   1、采用导航栏模式，选中工具，表格呈现工具列表。
 
-  ![image-20250910113358684](C:\Users\MSI-NB\AppData\Roaming\Typora\typora-user-images\image-20250910113358684.png)
+  ![image-20250910113358684](https://github.com/WileHunter/MagicBag/blob/main/mdgitpic/Snipaste_2025-09-10_11-39-50.png)
 
 - 关于
   1、工具更新日志。
 
-  ![image-20250910113431440](C:\Users\MSI-NB\AppData\Roaming\Typora\typora-user-images\image-20250910113431440.png)
+  ![image-20250910113431440](https://github.com/WileHunter/MagicBag/blob/main/mdgitpic/Snipaste_2025-09-10_11-39-58.png)
 
 ## 作者
 
