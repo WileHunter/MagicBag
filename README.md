@@ -23,7 +23,7 @@
   3、快捷保存，ctrl+s快捷保存编辑笔记。
   4、时刻提醒未保存笔记。
 
-  ![image-20250910113338370](https://github.com/WileHunter/MagicBag/blob/main/mdgitpic/Snipaste_2025-09-10_11-39-41.png)
+  ![image-20250910113338370]()
 
 - 数据库
 
