@@ -1,0 +1,15 @@
+# ---- 构建产物 ----
+bin/
+obj/
+*.user
+
+# ---- Visual Studio / Rider ----
+.vs/
+.idea/
+*.suo
+*.userprefs
+
+# ---- 本地运行数据（含隐私，不上传）----
+Notebooks/
+tools.json
+settings.json

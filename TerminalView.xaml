@@ -1,0 +1,188 @@
+<UserControl x:Class="WpfApp3.TerminalView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="480" d:DesignWidth="800"
+             IsVisibleChanged="TerminalView_IsVisibleChanged">
+    <UserControl.Resources>
+        <!-- 输出区：只读、等宽、无边框 -->
+        <Style x:Key="TermOutput" TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="IsReadOnlyCaretVisible" Value="False"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TermForegroundBrush}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource TermSelectionBrush}"/>
+            <Setter Property="SelectionOpacity" Value="0.35"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,10,4,10"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" Padding="{TemplateBinding Padding}" Focusable="False"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 命令输入行 -->
+        <Style x:Key="TermInput" TargetType="TextBox">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource TermForegroundBrush}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TermPromptBrush}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource TermSelectionBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Focusable="False"
+                                          HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                            <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}" Margin="2,0,0,0" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource ThirdlyTextBrush}" IsHitTestVisible="False" Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 会话标签 -->
+        <Style x:Key="SessionTab" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+            <Setter Property="ToolTip" Value="{Binding ToolTipText}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Height="30" CornerRadius="8" Padding="10,0,4,0" Background="Transparent"
+                                BorderBrush="Transparent" BorderThickness="1">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverItemBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NavCheckedBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource NavCheckedBorderBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 会话标签 + 操作 -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="&#xE710;" ToolTip="新建终端" Style="{StaticResource IconButton}" Click="NewSession_Click"/>
+                <Border Style="{StaticResource VSeparator}"/>
+                <Button x:Name="StopButton" Content="&#xE71A;" ToolTip="停止运行 (Ctrl+C)" Style="{StaticResource IconButton}"
+                        IsEnabled="False" Click="Stop_Click"/>
+                <Button Content="&#xE75C;" ToolTip="清屏 (Ctrl+L)" Style="{StaticResource IconButton}" Click="Clear_Click"/>
+                <Button Content="&#xE8C8;" ToolTip="复制全部输出" Style="{StaticResource IconButton}" Click="CopyAll_Click"/>
+                <Button Content="&#xE838;" ToolTip="打开当前目录" Style="{StaticResource IconButton}" Click="OpenFolder_Click"/>
+                <Button Content="&#xE8A7;" ToolTip="在系统终端中打开当前目录" Style="{StaticResource IconButton}" Click="OpenSystem_Click"/>
+            </StackPanel>
+
+            <ListBox x:Name="SessionList" Background="Transparent" BorderThickness="0" Padding="0"
+                     ItemContainerStyle="{StaticResource SessionTab}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     SelectionChanged="SessionList_SelectionChanged">
+                <ListBox.Template>
+                    <ControlTemplate TargetType="ListBox">
+                        <ScrollViewer Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                            <ItemsPresenter/>
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ListBox.Template>
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="Dot" Width="7" Height="7" Margin="0,0,7,0" VerticalAlignment="Center"
+                                     Fill="{DynamicResource TermIdleBrush}"/>
+                            <TextBlock Text="{Binding Title}" MaxWidth="120" TextTrimming="CharacterEllipsis" FontSize="12"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="&#xE711;" ToolTip="关闭" Style="{StaticResource IconButton}" Width="20" Height="20"
+                                    FontSize="9" Margin="4,0,0,0" Click="CloseSession_Click"/>
+                        </StackPanel>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource TermRunningBrush}"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+
+        <!-- 输出 -->
+        <Border Grid.Row="1" CornerRadius="10" Background="{DynamicResource TermBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" ClipToBounds="True">
+            <Grid>
+                <ContentControl x:Name="OutputHost" Focusable="False"/>
+                <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="&#xE756;" Style="{StaticResource IconText}" FontSize="34" Foreground="{DynamicResource ThirdlyTextBrush}"/>
+                    <TextBlock Text="没有打开的终端" Margin="0,12,0,0" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SecondaryTextBrush}"/>
+                    <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Center" Margin="0,14,0,0" Click="NewSession_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" Style="{StaticResource IconText}" FontSize="12" Margin="0,0,8,0"/>
+                            <TextBlock Text="新建终端"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 输入 -->
+        <Border x:Name="InputBar" Grid.Row="2" Margin="0,8,0,0" Height="36" CornerRadius="8" Padding="12,0,6,0"
+                Background="{DynamicResource TermBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MaxWidth="300"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="PromptText" FontFamily="{StaticResource MonoFont}" FontSize="12.5" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TermPromptBrush}" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+                <TextBox x:Name="CommandInput" Grid.Column="1" Style="{StaticResource TermInput}"
+                         Tag="输入命令，回车执行 · ↑↓ 历史"
+                         PreviewKeyDown="CommandInput_PreviewKeyDown"/>
+                <Button Grid.Column="2" Content="&#xE724;" ToolTip="执行 (Enter)" Style="{StaticResource IconButton}" Width="26" Height="26"
+                        FontSize="12" Click="Run_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

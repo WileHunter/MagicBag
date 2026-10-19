@@ -1,0 +1,394 @@
+﻿<UserControl x:Class="WpfApp3.NotebookView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="480" d:DesignWidth="800">
+    <UserControl.Resources>
+        <!-- 编辑器“纸张” -->
+        <Style x:Key="PaperRichTextBox" TargetType="RichTextBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#1E293B"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource PaperCaretBrush}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource PaperSelectionBrush}"/>
+            <Setter Property="SelectionOpacity" Value="0.3"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="AcceptsTab" Value="True"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="IsInactiveSelectionHighlightEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RichTextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False" Padding="{TemplateBinding Padding}"
+                                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 工具栏下拉框（紧凑） -->
+        <Style x:Key="ToolbarCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="8,0,4,0"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Focusable" Value="True"/>
+        </Style>
+
+        <Style x:Key="TbButton" TargetType="ButtonBase" BasedOn="{StaticResource IconButton}">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Margin" Value="0.5,0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- 颜色色块 -->
+        <Style x:Key="SwatchButton" TargetType="Button">
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4"
+                                BorderBrush="#33FFFFFF" BorderThickness="1"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="White"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="SidebarColumn" Width="186"/>
+            <ColumnDefinition x:Name="SidebarGapColumn" Width="10"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= 笔记列表 ================= -->
+        <Border x:Name="Sidebar" Style="{StaticResource PanelBorder}">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="14,10,8,6">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="&#xE710;" ToolTip="新建笔记 (Ctrl+N)" Style="{StaticResource IconButton}" Width="26" Height="26" Click="NewNote_Click"/>
+                        <Button Content="&#xE74D;" ToolTip="删除笔记" Style="{StaticResource IconButton}" Width="26" Height="26" Click="DeleteNote_Click"/>
+                    </StackPanel>
+                    <TextBlock Text="笔记" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock x:Name="NoteCountText" Style="{StaticResource MutedText}" Margin="6,1,0,0"/>
+                </DockPanel>
+                <TextBox x:Name="NoteFilterBox" DockPanel.Dock="Top" Style="{StaticResource SearchBox}" Height="30"
+                         Tag="筛选笔记" Margin="8,0,8,6" TextChanged="NoteFilterBox_TextChanged"/>
+                <ListBox x:Name="NotesListBox" Style="{StaticResource ModernListBox}" Padding="6,0,6,6"
+                         SelectionChanged="NotesListBox_SelectionChanged" MouseDoubleClick="NotesListBox_MouseDoubleClick">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="Chip" Style="{StaticResource Chip}" Width="28" Height="28" CornerRadius="7" Margin="0,0,9,0"
+                                        Background="{DynamicResource NoteChip0Brush}">
+                                    <Grid>
+                                        <TextBlock x:Name="ChipText" Text="{Binding Initial}" FontSize="13" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource NoteChip0FgBrush}"/>
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding ModifiedText}" Style="{StaticResource MutedText}" FontSize="10" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding ChipIndex}" Value="1">
+                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource NoteChip1Brush}"/>
+                                    <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource NoteChip1FgBrush}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ChipIndex}" Value="2">
+                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource NoteChip2Brush}"/>
+                                    <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource NoteChip2FgBrush}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ChipIndex}" Value="3">
+                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource NoteChip3Brush}"/>
+                                    <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource NoteChip3FgBrush}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ChipIndex}" Value="4">
+                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource NoteChip4Brush}"/>
+                                    <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource NoteChip4FgBrush}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ChipIndex}" Value="5">
+                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource NoteChip5Brush}"/>
+                                    <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource NoteChip5FgBrush}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="重命名" Click="Rename_Click"/>
+                            <MenuItem Header="在资源管理器中显示" Click="RevealNote_Click"/>
+                            <MenuItem Header="导出为纯文本..." Click="ExportText_Click"/>
+                            <Separator/>
+                            <MenuItem Header="删除" Click="DeleteNote_Click"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ================= 编辑区 ================= -->
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 工具栏 -->
+            <Border x:Name="ToolbarBorder" Style="{StaticResource PanelBorder}" Padding="6,4" Margin="0,0,0,8">
+                <WrapPanel x:Name="Toolbar" Orientation="Horizontal">
+                    <!-- 第一组：侧栏/撤销 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                        <ToggleButton x:Name="SidebarToggle" Content="&#xE700;" ToolTip="显示/隐藏笔记列表" Style="{StaticResource TbButton}"
+                                      IsChecked="True" Click="SidebarToggle_Click"/>
+                        <Border Style="{StaticResource VSeparator}"/>
+                        <Button Content="&#xE7A7;" ToolTip="撤销 (Ctrl+Z)" Style="{StaticResource TbButton}" Click="Undo_Click"/>
+                        <Button Content="&#xE7A6;" ToolTip="重做 (Ctrl+Y)" Style="{StaticResource TbButton}" Click="Redo_Click"/>
+                        <Border Style="{StaticResource VSeparator}"/>
+                    </StackPanel>
+
+                    <!-- 段落样式 / 字体 / 字号 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                        <ComboBox x:Name="ParagraphStyleCombo" Width="70" Style="{StaticResource ToolbarCombo}" ToolTip="段落样式"
+                                  SelectionChanged="ParagraphStyleCombo_SelectionChanged">
+                            <ComboBoxItem Content="正文" Tag="Normal"/>
+                            <ComboBoxItem Content="标题 1" Tag="H1"/>
+                            <ComboBoxItem Content="标题 2" Tag="H2"/>
+                            <ComboBoxItem Content="标题 3" Tag="H3"/>
+                            <ComboBoxItem Content="引用" Tag="Quote"/>
+                            <ComboBoxItem Content="代码块" Tag="Code"/>
+                        </ComboBox>
+                        <ComboBox x:Name="FontFamilyCombo" Width="100" Style="{StaticResource ToolbarCombo}" ToolTip="字体"
+                                  SelectionChanged="FontFamilyCombo_SelectionChanged">
+                            <ComboBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ComboBox.ItemsPanel>
+                        </ComboBox>
+                        <ComboBox x:Name="FontSizeCombo" Width="54" Style="{StaticResource ToolbarCombo}" ToolTip="字号"
+                                  IsEditable="True" SelectionChanged="FontSizeCombo_SelectionChanged"
+                                  KeyDown="FontSizeCombo_KeyDown" LostKeyboardFocus="FontSizeCombo_LostKeyboardFocus"/>
+                        <Border Style="{StaticResource VSeparator}"/>
+                    </StackPanel>
+
+                    <!-- 文字格式 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                        <ToggleButton x:Name="BoldButton" ToolTip="加粗 (Ctrl+B)" Style="{StaticResource TbButton}" Click="Bold_Click">
+                            <TextBlock Text="B" FontFamily="Segoe UI" FontWeight="Bold" FontSize="14"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="ItalicButton" ToolTip="斜体 (Ctrl+I)" Style="{StaticResource TbButton}" Click="Italic_Click">
+                            <TextBlock Text="I" FontFamily="Georgia" FontStyle="Italic" FontSize="14"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="UnderlineButton" ToolTip="下划线 (Ctrl+U)" Style="{StaticResource TbButton}" Click="Underline_Click">
+                            <TextBlock Text="U" FontFamily="Segoe UI" TextDecorations="Underline" FontSize="14"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="StrikeButton" ToolTip="删除线 (Ctrl+D)" Style="{StaticResource TbButton}" Click="Strike_Click">
+                            <TextBlock Text="S" FontFamily="Segoe UI" TextDecorations="Strikethrough" FontSize="14"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="InlineCodeButton" ToolTip="行内代码" Style="{StaticResource TbButton}" Click="InlineCode_Click">
+                            <TextBlock Text="&lt;/&gt;" FontFamily="Consolas" FontSize="11"/>
+                        </ToggleButton>
+
+                        <!-- 文字颜色 -->
+                        <Grid>
+                            <Button x:Name="FontColorButton" ToolTip="文字颜色" Style="{StaticResource TbButton}" Click="FontColorButton_Click">
+                                <Grid>
+                                    <TextBlock Text="A" FontFamily="Segoe UI" FontWeight="Bold" FontSize="13" Margin="0,-3,0,0"/>
+                                    <Border x:Name="FontColorBar" Height="3" Width="14" VerticalAlignment="Bottom" Margin="0,0,0,-3"
+                                            CornerRadius="1" Background="#EF4444"/>
+                                </Grid>
+                            </Button>
+                            <Popup x:Name="FontColorPopup" PlacementTarget="{Binding ElementName=FontColorButton}" Placement="Bottom"
+                                   StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource RegionBrush}" BorderBrush="{DynamicResource SecondaryBorderBrush}"
+                                        BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,4,8,8" Effect="{DynamicResource SoftShadow}">
+                                    <StackPanel>
+                                        <TextBlock Text="文字颜色" Style="{StaticResource MutedText}" Margin="2,0,0,6"/>
+                                        <WrapPanel x:Name="FontColorPanel" Width="150"/>
+                                        <Button Content="恢复默认颜色" Style="{StaticResource GhostButton}" Height="26" Margin="0,8,0,0"
+                                                Click="ResetFontColor_Click"/>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
+                        </Grid>
+
+                        <!-- 高亮 -->
+                        <Grid>
+                            <Button x:Name="HighlightButton" ToolTip="高亮" Style="{StaticResource TbButton}" Click="HighlightButton_Click">
+                                <Grid>
+                                    <TextBlock Text="&#xE7E6;" FontFamily="{StaticResource IconFont}" FontSize="13" Margin="0,-3,0,0"/>
+                                    <Border x:Name="HighlightBar" Height="3" Width="14" VerticalAlignment="Bottom" Margin="0,0,0,-3"
+                                            CornerRadius="1" Background="#FDE047"/>
+                                </Grid>
+                            </Button>
+                            <Popup x:Name="HighlightPopup" PlacementTarget="{Binding ElementName=HighlightButton}" Placement="Bottom"
+                                   StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource RegionBrush}" BorderBrush="{DynamicResource SecondaryBorderBrush}"
+                                        BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,4,8,8" Effect="{DynamicResource SoftShadow}">
+                                    <StackPanel>
+                                        <TextBlock Text="高亮颜色" Style="{StaticResource MutedText}" Margin="2,0,0,6"/>
+                                        <WrapPanel x:Name="HighlightPanel" Width="150"/>
+                                        <Button Content="清除高亮" Style="{StaticResource GhostButton}" Height="26" Margin="0,8,0,0"
+                                                Click="ClearHighlight_Click"/>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <Button ToolTip="清除格式" Style="{StaticResource TbButton}" Click="ClearFormat_Click">
+                            <Grid>
+                                <TextBlock Text="T" FontFamily="Segoe UI" FontSize="13"/>
+                                <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="7" Margin="10,9,0,0"/>
+                            </Grid>
+                        </Button>
+                        <Border Style="{StaticResource VSeparator}"/>
+                    </StackPanel>
+
+                    <!-- 段落 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                        <Button Content="&#xE8FD;" ToolTip="项目符号列表" Style="{StaticResource TbButton}" Click="Bullets_Click"/>
+                        <Button ToolTip="编号列表" Style="{StaticResource TbButton}" Click="Numbering_Click">
+                            <TextBlock Text="1." FontFamily="Segoe UI" FontWeight="SemiBold" FontSize="12"/>
+                        </Button>
+                        <Button Content="&#xE73A;" ToolTip="待办复选框（单击方框可勾选）" Style="{StaticResource TbButton}" Click="Checkbox_Click"/>
+                        <Button ToolTip="减少缩进" Style="{StaticResource TbButton}" Click="Outdent_Click">
+                            <TextBlock Text="⇤" FontFamily="Segoe UI Symbol" FontSize="14"/>
+                        </Button>
+                        <Button ToolTip="增加缩进" Style="{StaticResource TbButton}" Click="Indent_Click">
+                            <TextBlock Text="⇥" FontFamily="Segoe UI Symbol" FontSize="14"/>
+                        </Button>
+                        <ToggleButton x:Name="AlignLeftButton" Content="&#xE8E4;" ToolTip="左对齐 (Ctrl+L)" Style="{StaticResource TbButton}" Click="Align_Click" Tag="Left"/>
+                        <ToggleButton x:Name="AlignCenterButton" Content="&#xE8E3;" ToolTip="居中 (Ctrl+E)" Style="{StaticResource TbButton}" Click="Align_Click" Tag="Center"/>
+                        <ToggleButton x:Name="AlignRightButton" Content="&#xE8E2;" ToolTip="右对齐 (Ctrl+R)" Style="{StaticResource TbButton}" Click="Align_Click" Tag="Right"/>
+                        <ToggleButton x:Name="AlignJustifyButton" ToolTip="两端对齐 (Ctrl+J)" Style="{StaticResource TbButton}" Click="Align_Click" Tag="Justify">
+                            <TextBlock Text="≣" FontFamily="Segoe UI Symbol" FontSize="15"/>
+                        </ToggleButton>
+                        <Border Style="{StaticResource VSeparator}"/>
+                    </StackPanel>
+
+                    <!-- 插入 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                        <Button Content="&#xEB9F;" ToolTip="插入图片（也可直接粘贴截图）" Style="{StaticResource TbButton}" Click="InsertImage_Click"/>
+                        <Button Content="&#xE71B;" ToolTip="插入链接 (Ctrl+K)，Ctrl+单击打开" Style="{StaticResource TbButton}" Click="InsertLink_Click"/>
+                        <Button ToolTip="插入表格" Style="{StaticResource TbButton}" Click="InsertTable_Click">
+                            <TextBlock Text="⊞" FontFamily="Segoe UI Symbol" FontSize="15"/>
+                        </Button>
+                        <Button ToolTip="分割线" Style="{StaticResource TbButton}" Click="InsertDivider_Click">
+                            <TextBlock Text="—" FontFamily="Segoe UI" FontSize="14"/>
+                        </Button>
+                        <Button Content="&#xE787;" ToolTip="插入当前时间" Style="{StaticResource TbButton}" Click="InsertDate_Click"/>
+                        <Border Style="{StaticResource VSeparator}"/>
+                        <Button Content="&#xE721;" ToolTip="查找 / 替换 (Ctrl+F / Ctrl+H)" Style="{StaticResource TbButton}" Click="ToggleFind_Click"/>
+                        <Button Content="&#xE74E;" ToolTip="保存 (Ctrl+S)" Style="{StaticResource TbButton}" Click="SaveNote_Click"/>
+                    </StackPanel>
+                </WrapPanel>
+            </Border>
+
+            <!-- 编辑器 -->
+            <Border Grid.Row="1" CornerRadius="10" Background="{DynamicResource PaperBrush}" BorderBrush="{DynamicResource PaperBorderBrush}"
+                    BorderThickness="1" ClipToBounds="True" Effect="{DynamicResource PaperGlow}">
+                <Grid>
+                    <RichTextBox x:Name="NoteRichTextBox"
+                                 Style="{StaticResource PaperRichTextBox}"
+                                 Padding="14,10,6,10"
+                                 DataObject.Pasting="RichTextBox_Pasting"
+                                 TextChanged="NoteRichTextBox_TextChanged"
+                                 SelectionChanged="NoteRichTextBox_SelectionChanged"
+                                 PreviewMouseLeftButtonDown="NoteRichTextBox_PreviewMouseLeftButtonDown"
+                                 PreviewMouseWheel="NoteRichTextBox_PreviewMouseWheel"
+                                 PreviewKeyDown="NoteRichTextBox_PreviewKeyDown">
+                        <RichTextBox.Resources>
+                            <Style TargetType="Paragraph">
+                                <Setter Property="Margin" Value="0,0,0,4"/>
+                            </Style>
+                            <Style TargetType="Hyperlink">
+                                <Setter Property="Foreground" Value="#0284C7"/>
+                                <Setter Property="Cursor" Value="IBeam"/>
+                            </Style>
+                        </RichTextBox.Resources>
+                        <FlowDocument FontFamily="Microsoft YaHei UI" FontSize="14" PagePadding="10,6" LineHeight="22"/>
+                    </RichTextBox>
+
+                    <!-- 空状态 -->
+                    <Border x:Name="EmptyOverlay" Background="{DynamicResource PaperBrush}" Visibility="Collapsed">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="&#xE70B;" FontFamily="{StaticResource IconFont}" FontSize="36" Foreground="{DynamicResource PaperIconBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="选择左侧笔记，或新建一篇" Foreground="{DynamicResource PaperMutedBrush}" FontSize="13" Margin="0,12,0,14"
+                                       HorizontalAlignment="Center"/>
+                            <Button Content="新建笔记" Style="{StaticResource AccentButton}" HorizontalAlignment="Center" Width="96"
+                                    Click="NewNote_Click"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 查找 / 替换 -->
+                    <Border x:Name="SearchPanel" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,14,0"
+                            Background="{DynamicResource RegionBrush}" BorderBrush="{DynamicResource SecondaryBorderBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="6" Visibility="Collapsed" Effect="{DynamicResource SoftShadow}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <ToggleButton x:Name="ReplaceToggle" Content="&#xE76C;" ToolTip="显示替换" Style="{StaticResource TbButton}"
+                                              Width="22" FontSize="9" Click="ReplaceToggle_Click"/>
+                                <TextBox x:Name="SearchTextBox" Width="150" Height="28" Style="{StaticResource SearchBox}" Tag="查找"
+                                         TextChanged="SearchTextBox_TextChanged" PreviewKeyDown="SearchTextBox_PreviewKeyDown"/>
+                                <ToggleButton x:Name="MatchCaseToggle" ToolTip="区分大小写" Style="{StaticResource TbButton}" Click="MatchCase_Click">
+                                    <TextBlock Text="Aa" FontFamily="Segoe UI" FontSize="11"/>
+                                </ToggleButton>
+                                <TextBlock x:Name="MatchCountTextBlock" Text="0/0" MinWidth="36" TextAlignment="Center"
+                                           Style="{StaticResource MutedText}" Margin="2,0"/>
+                                <Button Content="&#xE70E;" ToolTip="上一个 (Shift+Enter)" Style="{StaticResource TbButton}" FontSize="11" Click="PreviousMatch_Click"/>
+                                <Button Content="&#xE70D;" ToolTip="下一个 (Enter)" Style="{StaticResource TbButton}" FontSize="11" Click="NextMatch_Click"/>
+                                <Button Content="&#xE711;" ToolTip="关闭 (Esc)" Style="{StaticResource TbButton}" FontSize="11" Click="CloseSearch_Click"/>
+                            </StackPanel>
+                            <StackPanel x:Name="ReplaceRow" Orientation="Horizontal" Margin="24,6,0,0" Visibility="Collapsed">
+                                <TextBox x:Name="ReplaceTextBox" Width="150" Height="28" Style="{StaticResource FieldBox}"
+                                         PreviewKeyDown="ReplaceTextBox_PreviewKeyDown"/>
+                                <Button Content="替换" Style="{StaticResource GhostButton}" Height="28" Padding="10,0" Margin="6,0,0,0"
+                                        Click="ReplaceOne_Click"/>
+                                <Button Content="全部替换" Style="{StaticResource GhostButton}" Height="28" Padding="10,0" Margin="6,0,0,0"
+                                        Click="ReplaceAll_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- 状态栏 -->
+            <DockPanel Grid.Row="2" Margin="4,6,4,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <CheckBox x:Name="AutoSaveCheck" Content="自动保存" IsChecked="True" FontSize="11"
+                              Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Button x:Name="ZoomButton" Content="100%" ToolTip="Ctrl+滚轮缩放，单击重置" Style="{StaticResource IconButton}"
+                            Width="44" Height="20" FontFamily="{StaticResource UiFont}" FontSize="11" Click="ZoomReset_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="StatusTextBlock" Text="就绪" Style="{StaticResource MutedText}"/>
+                    <TextBlock x:Name="WordCountText" Style="{StaticResource MutedText}" Margin="14,0,0,0"/>
+                </StackPanel>
+            </DockPanel>
+        </Grid>
+    </Grid>
+</UserControl>
